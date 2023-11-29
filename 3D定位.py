@@ -36,7 +36,8 @@ def GetDistByRssi(rssi):
 
 xdata = np.array([])
 ydata = np.array([])
-for i in range(4, 7):
+bp_dist = pd.read_excel('距离.xlsx')
+for i in range(6, 7):
     # 绘制图层 锚节点个数相同的情况绘制在一张图里
     plt.figure(dpi=80, figsize = (20, 10))
 
@@ -95,6 +96,7 @@ for i in range(4, 7):
         '（19.4，4.4）.xls'
     ]
     error = np.array([])
+    # out_rssi = pd.DataFrame([])
     for filename in filelist:
         idx = filelist.index(filename) # 求解当前文件名的下标 用来绘制子图
 
@@ -117,13 +119,17 @@ for i in range(4, 7):
         ZZ = np.array([])
         for i in range(Node_number):
             ZZ = np.append(ZZ, np.mean(data.iloc[i]))
+        # out_rssi['待测点' + str(idx)] = ZZ
 
-        # 根据Rssi求各锚节点的观测距离
-        Zd = np.zeros(Node_number)  # 计算的距离
-        for i in range(Node_number):
-            Zd[i] = GetDistByRssi(ZZ[i])
-            # Zd[i] = Get_DIST(Node[i], Target)
+        # # 根据Rssi求各锚节点的观测距离
+        # Zd = np.zeros(Node_number)  # 计算的距离
+        # for i in range(Node_number):
+        #     Zd[i] = GetDistByRssi(ZZ[i])
+        #     # Zd[i] = Get_DIST(Node[i], Target)
         # print(Zd)
+
+        # 直接读取神经网络拟合出来的距离数据
+        Zd = np.array(bp_dist.loc[:, idx])
 
         # 根据观测距离用最小二乘法估计目标位置
         H = np.zeros((Node_number - 1, 3))
@@ -144,7 +150,7 @@ for i in range(4, 7):
         HHH = np.dot(HH_inv, H_T)
         Estimate = np.dot(HHH, b)
 
-        print(Estimate)
+        # print(Estimate)
 
         Est_Target = target()
         Est_Target.x = Estimate[0]
@@ -181,6 +187,8 @@ for i in range(4, 7):
 
         error = np.append(error, Error_Dist)
 
+    # out_rssi.to_excel('导出rssi值.xlsx')
+
     # 每一轮结束之后 将8个误差的均值加入ydata中
     ydata = np.append(ydata, np.mean(error))
 
@@ -195,4 +203,5 @@ plt.xlabel('锚节点个数')
 plt.ylabel('平均误差')
 for i in range(len(xdata)):
     plt.text(xdata[i], ydata[i], '(' + str(int(xdata[i])) + ',' + str('%.3f'%ydata[i]) + ')', fontsize = 8)
+    print('锚节点个数为:' + str(xdata[i]) + '\n' + '平均误差为:' + str(ydata[i]))
 plt.show()
